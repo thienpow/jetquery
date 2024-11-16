@@ -152,6 +152,16 @@ pub const Options = struct {
     port: ?u16 = null,
     pool_size: ?u16 = null,
     timeout: ?u32 = null,
+    // Add SSL options
+    ssl: SSLConfig = .{},
+
+    pub const SSLConfig = struct {
+        enabled: bool = false,
+        verify: bool = true,
+        cert_file: ?[]const u8 = null,
+        key_file: ?[]const u8 = null,
+        ca_file: ?[]const u8 = null,
+    };
 
     pub fn defaultValue(T: type, comptime field_name: []const u8) T {
         const tag = std.enums.nameCast(std.meta.FieldEnum(Options), field_name);
@@ -687,6 +697,12 @@ fn initPool(allocator: std.mem.Allocator, options: Options) !*pg.Pool {
         .connect = .{
             .port = options.port.?,
             .host = options.hostname.?,
+            .ssl = if (options.ssl.enabled) .{
+                .verify = options.ssl.verify,
+                .cert_file = options.ssl.cert_file,
+                .key_file = options.ssl.key_file,
+                .ca_file = options.ssl.ca_file,
+            } else .disabled,
         },
         .auth = .{
             .username = options.username orelse return configError("username"),
